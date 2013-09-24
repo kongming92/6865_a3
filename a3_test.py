@@ -1,8 +1,5 @@
-from scipy import misc
 import numpy as np
-import matplotlib.pyplot as plt
 import a3
-import matplotlib.cm as cm
 import imageIO as myImageIO
 
 ## Test case ##
@@ -68,33 +65,30 @@ def test_unsharpen():
 
 def test_bilateral():
   im=myImageIO.imread('lens-3-med.png', 1.0)
-  out=a3.bilateral(im, 0.3, 1.4)
+  out=a3.bilateral(im, 0.3, 1)
   myImageIO.imwrite(out, 'test_bilateral.png', 1.0)
 
 def test_bilaYUV():
-  im=myImageIO.imread('lens-3-small.png', 1.0)
-  out=a3.bilaYUV(im, 0.3, 1.4, 6)
+  im=myImageIO.imread('lens-3-med.png', 1.0)
+  out=a3.bilaYUV(im, 0.3, 1, 4)
   myImageIO.imwrite(out, 'test_bilateralYUV.png', 1.0)
 
 def impulse(h=100, w=100):
-    out=myImageIO.constantIm(h, w, 0.0)
-    out[h/2, w/2]=1
-    return out
-
+  out=myImageIO.constantIm(h, w, 0.0)
+  out[h/2, w/2]=1
+  return out
 
 #Uncomment the following function to test your code
 
-
-# test_box_blur()
-# test_convolve_gauss()
-# test_convolve_deriv()
-# test_convolve_Sobel()
-# test_grad()
-# test_horigauss()
-# test_gaussianBlur()
-# test_gauss2D()
-# print test_equal()
-
-# test_unsharpen()
-# test_bilateral()
+test_box_blur()
+test_convolve_gauss()
+test_convolve_deriv()
+test_convolve_Sobel()
+test_grad()
+test_horigauss()
+test_gaussianBlur()
+test_gauss2D()
+print test_equal()
+test_unsharpen()
+test_bilateral()
 test_bilaYUV()

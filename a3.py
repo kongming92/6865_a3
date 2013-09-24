@@ -1,8 +1,4 @@
 import numpy as np
-from scipy import ndimage
-import scipy
-from scipy import signal
-from numpy import exp
 import imageIO as io
 import math
 
@@ -56,85 +52,43 @@ def unsharpenMask(im, sigma, truncate, strength):
     return im + strength * (im - gaussianBlur(im, sigma, truncate))
 
 def bilateral(im, sigmaRange, sigmaDomain):
-    truncate = 3
+    truncate = 2
     offset = int(math.ceil(truncate * sigmaDomain))
     gaussianDistDomain = gauss2D(sigmaDomain, truncate)
     im_out = io.constantIm(im.shape[0], im.shape[1], 0)
     for y, x in imIter(im_out):
         k = 0
-        s = np.empty([3])
+        s = np.array([0.0, 0.0, 0.0])
         for yp in xrange(y - offset, y + offset + 1):
             for xp in xrange(x - offset, x + offset + 1):
                 # Get domain Gaussian
-                domainGaussian = 0
-                if abs(y - yp) < offset and abs(x - xp) < offset:
-                    domainGaussian = gaussianDistDomain[y - yp + offset, x - xp + offset]
-
+                domainGaussian = gaussianDistDomain[y - yp + offset, x - xp + offset]
                 # Get range Gaussian
                 imDist = np.sum((im[y, x] - getEdgePadded(im, yp, xp))**2) ** 0.5
                 rangeGaussian = continuousGaussian(imDist, sigmaRange)
-
+                # rangeGaussian = 1
                 k += domainGaussian * rangeGaussian
                 s += domainGaussian * rangeGaussian * getEdgePadded(im, yp, xp)
-
         im_out[y, x] = s / k
 
     return im_out
 
 def bilaYUV(im, sigmaRange, sigmaY, sigmaUV):
     # 6.865 only: filter YUV differently
-
     imYUV = rgb2yuv(im)
-    truncate = 3
-    offsetY = int(math.ceil(truncate * sigmaY))
-    offsetUV = int(math.ceil(truncate * sigmaUV))
-    offset = max(offsetY, offsetUV)
-
-    gaussianDistY = gauss2D(sigmaY, truncate)
-    gaussianDistUV = gauss2D(sigmaUV, truncate)
+    bilateralY = bilateral(imYUV, sigmaRange, sigmaY)
+    bilateralUV = bilateral(imYUV, sigmaRange, sigmaUV)
     im_out = io.constantIm(im.shape[0], im.shape[1], 0)
 
-    for y, x in imIter(im_out):
-        kY = 0
-        kUV = 0
-        s = np.empty([3])
-        for yp in xrange(y - offset, y + offset + 1):
-            for xp in xrange(x - offset, x + offset + 1):
-                # Get domain Gaussian
-                gaussianUV = 0
-                gaussianY = 0
-                if abs(y - yp) < offsetY and abs(x - xp) < offsetY:
-                    gaussianY = gaussianDistY[y - yp + offsetY, x - xp + offsetY]
-
-                if abs(y - yp) < offsetUV and abs(x - xp) < offsetUV:
-                    gaussianUV = gaussianDistUV[y - yp + offsetUV, x - xp + offsetUV]
-
-                # Get range Gaussian
-
-                imPadded = getEdgePadded(imYUV, yp, xp)
-
-                imDist = np.sum((imYUV[y, x] - imPadded)**2) ** 0.5
-                rangeGaussian = continuousGaussian(imDist, sigmaRange)
-
-                kY += gaussianY * rangeGaussian
-                kUV += gaussianUV * rangeGaussian
-
-                s[0] += gaussianY * rangeGaussian * imPadded[0]
-                s[1] += gaussianUV * rangeGaussian * imPadded[1]
-                s[2] += gaussianUV * rangeGaussian * imPadded[2]
-
-        s[0] /= kY
-        s[1] /= kUV
-        s[2] /= kUV
-
-        im_out[y, x] = s
+    for y,x in imIter(im_out):
+        im_out[y, x] = np.array([bilateralY[y, x, 0], bilateralUV[y, x, 1], bilateralUV[y, x, 2]])
 
     return yuv2rgb(im_out)
 
 # Helpers
 
 def continuousGaussian(x, sigma):
-    return 1.0 / math.sqrt(2 * math.pi * sigma**2) * math.e ** -(x**2 / (2 * sigma**2))
+    return 1.0 / math.sqrt(2 * math.pi * sigma**2) * math.e ** -(float(x)**2 / (2 * sigma**2))
 
 def imIter(im):
     for y in range(0,im.shape[0]):
@@ -167,6 +121,3 @@ def yuv2rgb(im):
         for x in xrange(width):
             imrgb[y][x] = np.dot(M, imrgb[y][x])
     return imrgb
-
-
-
