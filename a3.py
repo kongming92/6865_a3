@@ -66,7 +66,6 @@ def bilateral(im, sigmaRange, sigmaDomain):
                 # Get range Gaussian
                 imDist = np.sum((im[y, x] - getEdgePadded(im, yp, xp))**2) ** 0.5
                 rangeGaussian = continuousGaussian(imDist, sigmaRange)
-                # rangeGaussian = 1
                 k += domainGaussian * rangeGaussian
                 s += domainGaussian * rangeGaussian * getEdgePadded(im, yp, xp)
         im_out[y, x] = s / k
